@@ -13,7 +13,7 @@ fi
 
 PYTHON_COMPAT=( python{3_4,3_5,3_6} )
 
-inherit bash-completion-r1 linux-info multilib-minimal ninja-utils pam python-any-r1 systemd toolchain-funcs udev user
+inherit bash-completion-r1 linux-info meson multilib-minimal ninja-utils pam python-any-r1 systemd toolchain-funcs udev user
 
 DESCRIPTION="System and service manager for Linux"
 HOMEPAGE="https://www.freedesktop.org/wiki/Software/systemd"
@@ -91,8 +91,6 @@ DEPEND="${COMMON_DEPEND}
 	app-arch/xz-utils:0
 	dev-util/gperf
 	>=dev-util/intltool-0.50
-	>=dev-util/meson-0.40.0
-	dev-util/ninja
 	>=sys-apps/coreutils-8.16
 	>=sys-kernel/linux-headers-${MINKV}
 	virtual/pkgconfig
@@ -199,10 +197,6 @@ meson_multilib_native_use() {
 
 multilib_src_configure() {
 	local myconf=(
-		--buildtype=plain
-		--prefix="${EPREFIX}/usr"
-		--libdir="$(get_libdir)"
-		--sysconfdir="${EPREFIX}/etc"
 		--localstatedir="${EPREFIX}/var"
 		-Dpamlibdir="$(getpam_mod_dir)"
 		# avoid bash-completion dep
@@ -283,9 +277,7 @@ multilib_src_configure() {
 		)
 	fi
 
-	set -- meson "${myconf[@]}" "${S}"
-	echo "$@"
-	"$@" || die
+	meson_src_configure "${myconf[@]}"
 }
 
 multilib_src_compile() {
@@ -309,9 +301,9 @@ multilib_src_install_all() {
 
 	if use sysv-utils; then
 		for app in halt poweroff reboot runlevel shutdown telinit; do
-			dosym "..${ROOTPREFIX%/}/bin/systemctl" /sbin/${app}
+			dosym "${EPREFIX}${ROOTPREFIX%/}/bin/systemctl" /sbin/${app}
 		done
-		dosym "..${ROOTPREFIX%/}/lib/systemd/systemd" /sbin/init
+		dosym "${EPREFIX}${ROOTPREFIX%/}/lib/systemd/systemd" /sbin/init
 	else
 		# we just keep sysvinit tools, so no need for the mans
 		rm "${ED%/}"/usr/share/man/man8/{halt,poweroff,reboot,runlevel,shutdown,telinit}.8 \
@@ -339,8 +331,8 @@ multilib_src_install_all() {
 
 	if [[ ! -e "${ED%/}"/usr/lib/systemd/systemd ]]; then
 		# Avoid breaking boot/reboot
-		dosym "../../..${ROOTPREFIX%/}/lib/systemd/systemd" /usr/lib/systemd/systemd
-		dosym "../../..${ROOTPREFIX%/}/lib/systemd/systemd-shutdown" /usr/lib/systemd/systemd-shutdown
+		dosym "${EPREFIX}${ROOTPREFIX%/}/lib/systemd/systemd" /usr/lib/systemd/systemd
+		dosym "${EPREFIX}${ROOTPREFIX%/}/lib/systemd/systemd-shutdown" /usr/lib/systemd/systemd-shutdown
 	fi
 }
 
@@ -384,6 +376,19 @@ migrate_locale() {
 			ebegin "Creating ${envd_locale_def} -> ../locale.conf symlink"
 			ln -n -s ../locale.conf "${envd_locale_def}"
 			eend ${?} || FAIL=1
+		fi
+	fi
+}
+
+pkg_preinst() {
+	# If /lib/systemd and /usr/lib/systemd are the same directory, remove the
+	# symlinks we created in src_install.
+	if [[ $(realpath "${EROOT%/}${ROOTPREFIX}/lib/systemd") == $(realpath "${EROOT%/}/usr/lib/systemd") ]]; then
+		if [[ -L ${ED%/}/usr/lib/systemd/systemd ]]; then
+			rm "${ED%/}/usr/lib/systemd/systemd" || die
+		fi
+		if [[ -L ${ED%/}/usr/lib/systemd/systemd-shutdown ]]; then
+			rm "${ED%/}/usr/lib/systemd/systemd-shutdown" || die
 		fi
 	fi
 }
