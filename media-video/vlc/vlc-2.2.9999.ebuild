@@ -21,13 +21,13 @@ MY_PV="${MY_PV/-beta/-test}"
 MY_P="${PN}-${MY_PV}"
 
 DESCRIPTION="VLC media player - Video player and streamer"
-HOMEPAGE="http://www.videolan.org/vlc/"
+HOMEPAGE="https://www.videolan.org/vlc/"
 if [[ ${PV} = *9999 ]] ; then # Live ebuild
 	SRC_URI=""
 elif [[ "${MY_P}" == "${P}" ]]; then
-	SRC_URI="http://download.videolan.org/pub/videolan/${PN}/${PV}/${P}.tar.xz"
+	SRC_URI="https://download.videolan.org/pub/videolan/${PN}/${PV}/${P}.tar.xz"
 else
-	SRC_URI="http://download.videolan.org/pub/videolan/testing/${MY_P}/${MY_P}.tar.xz"
+	SRC_URI="https://download.videolan.org/pub/videolan/testing/${MY_P}/${MY_P}.tar.xz"
 fi
 
 LICENSE="LGPL-2.1 GPL-2"
@@ -131,7 +131,7 @@ RDEPEND="
 	shout? ( >=media-libs/libshout-2.1:0 )
 	sid? ( media-libs/libsidplay:2 )
 	skins? ( x11-libs/libXext:0 x11-libs/libXpm:0 x11-libs/libXinerama:0 )
-	speex? ( media-libs/speex:0 )
+	speex? ( >=media-libs/speex-1.2.0:0 media-libs/speexdsp:0 )
 	svg? ( >=gnome-base/librsvg-2.9:2 >=x11-libs/cairo-1.13.1:0 )
 	swscale? (
 		!libav? ( media-video/ffmpeg:0= )

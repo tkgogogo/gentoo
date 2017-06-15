@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
-inherit autotools libtool git-r3 linux-info pam
+inherit autotools libtool git-r3 linux-info pam xdg-utils
 
 MY_PN=ConsoleKit2
 MY_P=${MY_PN}-${PV}
@@ -64,6 +64,8 @@ pkg_setup() {
 }
 
 src_prepare() {
+	xdg_environment_reset
+
 	sed -i -e '/SystemdService/d' data/org.freedesktop.ConsoleKit.service.in || die
 
 	default
@@ -83,8 +85,8 @@ src_configure() {
 		$(use_enable policykit polkit) \
 		$(use_enable evdev libevdev) \
 		$(use_enable acl udev-acl) \
-		$(use_enable cgroups) \
-		$(use_enable selinux) \
+		$(use_enable cgroups libcgmanager) \
+		$(use_enable selinux libselinux) \
 		$(use_enable udev libudev) \
 		$(use_enable test tests) \
 		--with-dbus-services="${EPREFIX}"/usr/share/dbus-1/services \
